@@ -1,21 +1,3 @@
-const test = [
-    {
-        id: Math.random() * 10,
-        body: '1 asdas ads da sd',
-        completed: true
-    },
-    {
-        id: Math.random() * 10,
-        body: '2 asdfasdf',
-        completed: false
-    },
-    {
-        id: Math.random() * 10,
-        body: '',
-        completed: true
-    },
-];
-
 let arrOfTasks = [];
 const textTask = document.getElementById('input'),
     taskContainer = document.getElementById('task-list');
@@ -33,19 +15,24 @@ taskContainer.addEventListener('click', ({target}) => {
         case 'completed':
             completedTask(target);
             break;
+        case 'edit':
+            editTask(target);
+            break;
     }
 })
 
-function deleteTask(target){
+// function delete one task
+function deleteTask(target) {
     const elemDelete = target.closest('li');
-    if(elemDelete.classList.contains('task')){
+    if (elemDelete.classList.contains('task')) {
         elemDelete.remove();
     }
 }
 
-function completedTask(target){
+// function completed click checkbox
+function completedTask(target) {
     const elemCheck = target.closest('li');
-    if(target.checked){
+    if (target.checked) {
         elemCheck.classList.add('completed');
         elemCheck.style.background = '#e5f4ff';
     } else {
@@ -54,16 +41,22 @@ function completedTask(target){
     }
 }
 
-// функция инициализации
-function init() {
-    if (Array.isArray(test)) {
-        arrOfTasks = test || [];
-        renderTasks(test);
-    }
+// function edit
+function editTask(target) {
+    const elemValue = target.closest('li').querySelector('.text');
+
+    textTask.value != '' ? elemValue.textContent = textTask.value : elemValue.textContent;
 }
 
-// вывод task из input через фрагмент разметки
-function renderTasks(textTask) {
+// функция инициализации
+function init() {
+    // return array of tasks or []
+    arrOfTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    renderTasks(arrOfTasks);
+}
+
+// вывод task из input через фрагмент разметки or empty array
+function renderTasks(textTask = []) {
     taskContainer.append(createTasksFragment(textTask));
 }
 
@@ -81,6 +74,7 @@ function createTasksFragment(textTask) {
 // функция создания элемента
 function createTaskElement({id, body, completed}) {
     const li = document.createElement('li');
+
     // проверка на completed - true/false
     if (completed) {
         li.classList.add('completed');
@@ -92,6 +86,7 @@ function createTaskElement({id, body, completed}) {
 
     // добавление текста textTask.body
     const p = document.createElement('p');
+    p.classList.add('text');
     // проверка на пустой текст
     body !== '' ? p.textContent = body : p.textContent = 'введите задачу';
 
@@ -105,18 +100,20 @@ function createTaskElement({id, body, completed}) {
         check.checked = true;
         li.style.background = '#e5f4ff';
     }
-    // изменение цвета
 
-
-    // кнопка удаления task
+    // button delete task
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Удалить';
     deleteBtn.dataset.btn = 'delete'
 
+    // button edit task
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Изменить';
+    editBtn.dataset.btn = 'edit';
+
     // создание p с check и li добавляя в него элементов
     p.prepend(check);
-    li.append(p);
-    li.append(deleteBtn);
+    li.append(p, deleteBtn, editBtn);
 
     return li;
 }
@@ -137,15 +134,20 @@ function renderNewTask(value, input) {
 
     const newTask = createNewTask(value);
 
-    arrOfTasks.push(newTask);
+    arrOfTasks.unshift(newTask);
+
+    // add task on page
+    taskContainer.insertAdjacentElement('afterbegin', createTaskElement(newTask));
 }
 
 function validateInput(value, input) {
     if (!value.trim().length) {
         input.placeholder = 'Введите задание';
         input.style.cssText = `border: 2px solid red`;
+        return false;
     } else {
         input.style.cssText = `border: 2px solid black`;
+        return true;
     }
 }
 
@@ -173,3 +175,8 @@ if (!taskContainer.firstElementChild) {
     });
 }
 
+window.addEventListener('unload', function () {
+    //convert to JSON format
+    let jsonArr = JSON.stringify(arrOfTasks);
+    return localStorage.setItem('tasks', jsonArr);
+})
